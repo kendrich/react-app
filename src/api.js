@@ -5,7 +5,7 @@ export default {
         login: credentials =>
             axios.post('/auth', { credentials }).then(res=> res.data)
         ,
-        validateToken: token =>
-            axios.post('/ValidateToken', {token}).then(res=> res.data)
+        validateToken: user =>
+            axios.post('/ValidateToken', {user}).then(res=> res.data)
     }
 };

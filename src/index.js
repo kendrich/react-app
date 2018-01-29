@@ -9,7 +9,7 @@ import { composeWithDevTools } from "redux-devtools-extension";
 import App from './App';
 import registerServiceWorker from './registerServiceWorker';
 import rootReducer from "./rootReducer";
-import { userLoggedIn } from "./actions/auth";
+import * as actions from "./actions/auth";
 import setAuthorizationHeader from "./utils/setAuthorizationHeader";
 import api from './api';
 
@@ -18,12 +18,22 @@ const store = createStore(
     composeWithDevTools(applyMiddleware(thunk))
 );
 if (localStorage.token) {
-    console.log(api.user.validateToken(localStorage.token))
+    
     const user = {
-      token: localStorage.token,
+        id: localStorage.id,
+        token: localStorage.token,
     };
-    setAuthorizationHeader(localStorage.token);
-    store.dispatch(userLoggedIn(user));
+    
+    api.user.validateToken(user).then((response)=>{
+        if(response === "valid"){
+            setAuthorizationHeader(user.token);
+            store.dispatch(actions.userLoggedIn(user));
+        }else{
+            localStorage.clear();
+            setAuthorizationHeader();
+            store.dispatch(actions.userLoggedOut());
+        }
+    });
 }
 
 ReactDOM.render(
