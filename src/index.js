@@ -23,18 +23,19 @@ if (localStorage.token) {
         id: localStorage.id,
         token: localStorage.token,
     };
+    setAuthorizationHeader(user.token);
+    store.dispatch(actions.userLoggedIn(user));
+
     
     api.user.validateToken(user).then((response)=>{
-        if(response === "valid"){
-            setAuthorizationHeader(user.token);
-            store.dispatch(actions.userLoggedIn(user));
-        }else{
+        if(response === "invalid"){
             localStorage.clear();
             setAuthorizationHeader();
             store.dispatch(actions.userLoggedOut());
         }
     });
 }
+
 
 ReactDOM.render(
     <BrowserRouter>

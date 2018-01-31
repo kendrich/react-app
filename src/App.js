@@ -9,12 +9,14 @@ import Profile from './components/pages/Profile';
 import UserRoute from './components/routes/UserRoute';
 
 const App = ({location, isAuthenticated}) => (
-    <div> 
+    <div className='app-div'> 
         {
             isAuthenticated ? 
-            <UserRoute location={location} path="/" exact component={Home}/> : <Route path="/" exact component={LoginPage}/>
+            <UserRoute location={location} path="/" exact component={Home}/> 
+            :
+            <Route path="/" exact component={LoginPage}/>
         }
-
+        
         <UserRoute location={location} path="/Profile" exact component={Profile}/>
        
     </div>
@@ -34,4 +36,4 @@ function mapStateToProps(state) {
     };
 }
 
-  export default connect(mapStateToProps)(App);
+export default connect(mapStateToProps)(App);
