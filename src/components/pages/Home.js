@@ -10,7 +10,4 @@ const Home = ({logout}) => (
     <Button onClick={() => {logout()}}>logout</Button>
 )
 
-Home.propTypes ={
-    logout: PropTypes.func.isRequired,
-}
 export default connect(null, {logout: actions.logout})(Home);
