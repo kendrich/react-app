@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Button,Form,Grid,Header,Segment,Input} from 'semantic-ui-react';
+import { Button,Form,Grid,Header,Segment,Input, Message} from 'semantic-ui-react';
 
 const InlineError = ({text}) => <span style={{color: "#912d2b"}}>{text}</span>
 InlineError.propTypes ={
@@ -26,7 +26,10 @@ export class Login extends React.Component {
         this.setState({errors});
         this.setState({loading: true})
         if(Object.keys(errors).length === 0){
-            this.props.submit(this.state.data);
+            this.props.submit(this.state.data)
+                        .catch(error=> {
+                            this.setState({errors: error.response, loading:false});
+                        });
         }
     }
 
@@ -62,6 +65,15 @@ export class Login extends React.Component {
                         <Header as='h2' color='teal' textAlign='center'>
                             Sign in to start your session
                         </Header>
+                        {
+                            errors.statusText &&
+                            <Message negative>
+                                <Message.Header>
+                                    Something went wrong!
+                                </Message.Header>
+                                <p>{errors.status} {errors.statusText}</p>
+                            </Message>
+                        }
                         <Form onSubmit={this.onSubmit} loading={loading}>
                             <Segment stacked>
                                 <Form.Field error={!!errors.username}>

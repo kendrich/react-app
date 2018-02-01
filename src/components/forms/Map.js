@@ -11,15 +11,7 @@ import api from '../../api';
 class MapForm extends React.Component {
 
     state = { 
-        key:'AIzaSyC9CYpKCszxzjravo3t5LN2PdfJcj9ErWA',
-        mapStyle : "mapbox://styles/mapbox/streets-v9",
-        center: {
-            lat: 40.7446790,
-            lng: -73.9485420
-        },
-        zoom: 11,
         cars: {},
-
         leftMenuVisible: true,
     }
 
@@ -30,7 +22,7 @@ class MapForm extends React.Component {
             this.setState({cars: response})
         })
 
-        let map = new window.google.maps.Map(document.getElementById('map'), {
+        const map = new window.google.maps.Map(document.getElementById('map'), {
             center: {
                 lat: -33.8688,
                 lng: 151.2195
@@ -39,6 +31,20 @@ class MapForm extends React.Component {
             mapTypeId: 'roadmap',
         });
 
+
+        const panorama = new window.google.maps.StreetViewPanorama(
+            document.getElementById('map-street-view'), {
+                position: {
+                    lat: -33.8688,
+                    lng: 151.2195
+                },
+                pov: {
+                    heading: 34,
+                    pitch: 10
+                }
+            });
+        map.setStreetView(panorama);
+
     }
     
 
@@ -46,7 +52,7 @@ class MapForm extends React.Component {
 
 
     render() {
-        const { cars, leftMenuVisible, center,zoom, key, mapStyle } = this.state
+        const { cars, leftMenuVisible } = this.state
         return (
             <div>
                 <Style>{`
@@ -106,7 +112,7 @@ class MapForm extends React.Component {
                     <Segment>Left</Segment>
                     <Segment>Middle</Segment>
                     <Segment>
-                        Right
+                        <div id="map-street-view" style={{height:'100px'}}/>
                     </Segment>
                 </Segment.Group>
             </div>
