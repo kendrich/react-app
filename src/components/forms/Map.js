@@ -3,14 +3,10 @@ import React from 'react'
 
 import {Menu, Transition, Checkbox, Button, Icon, Segment} from 'semantic-ui-react';
 import PropTypes from 'prop-types';
-import ReactMapboxGl, {Layer, Feature} from "react-mapbox-gl";
+
 import Style from 'react-style-tag';
 
 import api from '../../api';
-
-const Map = ReactMapboxGl({
-    accessToken: "pk.eyJ1Ijoia2VuZHJpY2gzMSIsImEiOiJjamQycXR5eXEzaTNrMnlvNWhqYjhzd296In0.Hy7UXGBXXqgYV4-mn-xfAg"
-});
 
 class MapForm extends React.Component {
 
@@ -35,10 +31,14 @@ class MapForm extends React.Component {
         })
 
         let map = new window.google.maps.Map(document.getElementById('map'), {
-            center: {lat: -33.8688, lng: 151.2195},
+            center: {
+                lat: -33.8688,
+                lng: 151.2195
+            },
             zoom: 13,
             mapTypeId: 'roadmap',
         });
+
     }
     
 
@@ -50,7 +50,7 @@ class MapForm extends React.Component {
         return (
             <div>
                 <Style>{`
-                    .google-map {
+                    #map{
                         height:95vh;
                         width:100%;
                     }
@@ -79,12 +79,7 @@ class MapForm extends React.Component {
 
                 
 
-                <Map style={mapStyle}
-                    containerStyle={{
-                        height: "95vh",
-                        width: "100vw"
-                    }}
-                />
+                <div id='map'/>
                 
                 <Transition visible={leftMenuVisible} animation='horizontal flip' duration={500}>
                     <Menu vertical fixed="left" className="left-menu-k">
@@ -104,8 +99,7 @@ class MapForm extends React.Component {
                                 }
                             </Menu.Menu>
                         )
-                    }
-                        
+                    }   
                     </Menu>
                 </Transition>
                 <Segment.Group horizontal className="car-details">
