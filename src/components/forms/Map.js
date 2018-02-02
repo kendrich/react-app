@@ -1,7 +1,7 @@
 
 import React from 'react'
 
-import {Menu, Transition, Checkbox, Button, Icon, Segment} from 'semantic-ui-react';
+import {Menu, Transition, Checkbox, Button, Icon, Segment, Modal, Header} from 'semantic-ui-react';
 import PropTypes from 'prop-types';
 
 import Style from 'react-style-tag';
@@ -13,6 +13,7 @@ class MapForm extends React.Component {
     state = { 
         cars: {},
         leftMenuVisible: true,
+        errors:{}
     }
 
     
@@ -20,6 +21,8 @@ class MapForm extends React.Component {
     componentDidMount() {
         api.admin.cars().then((response)=> {
             this.setState({cars: response})
+        }).catch(error=>{
+            this.setState({errors: error.response})
         })
 
         const map = new window.google.maps.Map(document.getElementById('map'), {
@@ -52,7 +55,7 @@ class MapForm extends React.Component {
 
 
     render() {
-        const { cars, leftMenuVisible } = this.state
+        const {cars, leftMenuVisible, errors} = this.state
         return (
             <div>
                 <Style>{`
@@ -73,7 +76,7 @@ class MapForm extends React.Component {
                         position: fixed !important;
                         bottom  : 0px !important;
                         left    : 0px !important;
-                        height  : 18vh !important;
+                        height  : 23vh !important;
                         width   : 50vw;
                     }
                     
@@ -82,9 +85,6 @@ class MapForm extends React.Component {
                     <Menu.Item icon="bars" onClick={this.toggleLeftMenu} />
                     <Menu.Item name='home'/>
                 </Menu>
-
-                
-
                 <div id='map'/>
                 
                 <Transition visible={leftMenuVisible} animation='horizontal flip' duration={500}>
@@ -112,9 +112,18 @@ class MapForm extends React.Component {
                     <Segment>Left</Segment>
                     <Segment>Middle</Segment>
                     <Segment>
-                        <div id="map-street-view" style={{height:'100px'}}/>
+                        <div id="map-street-view" style={{height:'100%'}}/>
                     </Segment>
                 </Segment.Group>
+
+                {
+                    errors.statusText && 
+                    <Modal open='true' basic size='fullscreen'>
+                        <Header textAlign='center' size='huge' content='Something went wrong!' />
+                        <Header textAlign='center' size='huge' content={errors.status} />
+                        <Header textAlign='center' size='huge' content={errors.statusText} />
+                    </Modal>
+                }
             </div>
         )
     }
