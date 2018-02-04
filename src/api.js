@@ -12,5 +12,10 @@ export default {
     admin: {
         cars: () => 
             axios.post('/Cars').then(res=> res.data),
+    },
+
+    gps: {
+        current: () =>
+            axios.post('/CurrentLocation').then(res=>res.data)
     }
 };

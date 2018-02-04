@@ -1,7 +1,7 @@
 
 import React from 'react'
-
-import {Menu, Transition, Checkbox, Button, Icon, Segment, Modal, Header} from 'semantic-ui-react';
+import $ from 'jquery'
+import {Menu, Transition, Checkbox, Button, Icon, Segment, Modal, Header, Divider, Dropdown} from 'semantic-ui-react';
 import PropTypes from 'prop-types';
 
 import Style from 'react-style-tag';
@@ -13,14 +13,23 @@ class MapForm extends React.Component {
     state = { 
         cars: {},
         leftMenuVisible: true,
-        errors:{}
+        errors:{},
+        activeCar: [],
+        currentLocation: []
     }
-
+    
     
 
     componentDidMount() {
+        const activeCar =[];
         api.admin.cars().then((response)=> {
             this.setState({cars: response})
+            Object.keys(response).map(key=> {
+                response[key].map(car=> {
+                    activeCar.push(car[3]);
+                })
+            })
+            this.setState({activeCar})
         }).catch(error=>{
             this.setState({errors: error.response})
         })
@@ -48,19 +57,59 @@ class MapForm extends React.Component {
             });
         map.setStreetView(panorama);
 
+
+        api.gps.current().then(res =>{
+            this.setState({...this.state, currentLocation: res})
+            console.log(this.state.currentLocation)
+        });
+
+    }
+
+    componentDidUpdate(){
+        console.log('didUpdate')
     }
     
 
     toggleLeftMenu= () => this.setState({ leftMenuVisible: !this.state.leftMenuVisible })
 
+    deptGroup = (event, data) => {
+        const activeCar = this.state.activeCar;
+        document.querySelectorAll(`.group-${data.value} input`).forEach(elem => {
+            elem.checked=data.checked;
+            if(elem.checked){
+                if(activeCar.indexOf(elem.value) === -1){
+                    activeCar.push(elem.value);
+                }
+            }else if(activeCar.indexOf(elem.value) > -1){
+                activeCar.splice(activeCar.indexOf(elem.value), 1);
+            }
+        })
+
+        console.log(activeCar)
+        this.setState({...this.state, activeCar});
+        
+    }
+
+    carCB = (event,data) =>{
+        const activeCar = this.state.activeCar;
+        if(data.checked){
+            if(activeCar.indexOf(data.value) === -1){
+                activeCar.push(data.value);
+            }
+        }else{
+            activeCar.splice(activeCar.indexOf(data.value), 1)
+        }
+        console.log(activeCar)
+        this.setState({...this.state, activeCar});
+    }
 
     render() {
-        const {cars, leftMenuVisible, errors} = this.state
+        const {cars, leftMenuVisible, errors, activeCar, currentLocation} = this.state
         return (
             <div>
                 <Style>{`
                     #map{
-                        height:95vh;
+                        height:94.5vh;
                         width:100%;
                     }
                     .left-menu-k{
@@ -79,7 +128,9 @@ class MapForm extends React.Component {
                         height  : 23vh !important;
                         width   : 50vw;
                     }
-                    
+                    .divider-k-0{
+                        margin: 0px !important;
+                    }
                 `}</Style>
                 <Menu className="home-menu">
                     <Menu.Item icon="bars" onClick={this.toggleLeftMenu} />
@@ -90,27 +141,34 @@ class MapForm extends React.Component {
                 <Transition visible={leftMenuVisible} animation='horizontal flip' duration={500}>
                     <Menu vertical fixed="left" className="left-menu-k">
                     {
-                        Object.keys(cars).map((dept) =>
+                        Object.keys(cars).map((dept, index) =>
                             <Menu.Menu>
                                 <Menu.Item className="dept-header">
-                                    <Checkbox as="h3" label={dept}/>
+                                    <Checkbox defaultChecked as="h3" label={dept}  value={index} onChange={this.deptGroup}/>
                                 </Menu.Item>
-
                                 {
-                                    cars[dept].map(car=> 
-                                        <Menu.Item>
-                                            <Checkbox className="car-cb" label={car[1]} />
-                                        </Menu.Item>
+                                    cars[dept].map((car) =>
+                                        <div>
+                                            <Menu.Item>
+                                                <Checkbox checked={activeCar.indexOf(car[3]) !== -1 } className={`car-cb group-${index}`} label={car[1]} value={car[3]} onChange={this.carCB}/>
+                                                <span style={{float: 'right', fontSize: 'x-small', padding: '5px'}}>{`${
+                                                        currentLocation[car[3]] ? `${currentLocation[car[3]].Speed} KPH`: 'N/A'
+                                                    }`}
+                                                </span>
+                                                
+                                            </Menu.Item>
+                                            <Divider className='divider-m-0'/>
+                                        </div>
                                     )
+
                                 }
                             </Menu.Menu>
                         )
-                    }   
+                    }
                     </Menu>
                 </Transition>
                 <Segment.Group horizontal className="car-details">
-                    <Segment>Left</Segment>
-                    <Segment>Middle</Segment>
+                    <Segment>First</Segment>
                     <Segment>
                         <div id="map-street-view" style={{height:'100%'}}/>
                     </Segment>
@@ -120,7 +178,7 @@ class MapForm extends React.Component {
                     errors.statusText && 
                     <Modal open='true' basic size='fullscreen'>
                         <Header textAlign='center' size='huge' content='Something went wrong!' />
-                        <Header textAlign='center' size='huge' content={errors.status} />
+                        <Header textAlign='center' size='huge' content={errors.status} className='header-p-0' />
                         <Header textAlign='center' size='huge' content={errors.statusText} />
                     </Modal>
                 }
