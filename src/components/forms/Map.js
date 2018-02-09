@@ -57,11 +57,17 @@ class MapForm extends React.Component {
             });
         map.setStreetView(panorama);
 
-
         api.gps.current().then(res =>{
             this.setState({...this.state, currentLocation: res})
             console.log(this.state.currentLocation)
         });
+
+        setInterval(() => {
+            api.gps.current().then(res =>{
+                this.setState({...this.state, currentLocation: res})
+                console.log(this.state.currentLocation)
+            });
+        }, 60000); // milliseconds
 
     }
 
@@ -150,12 +156,16 @@ class MapForm extends React.Component {
                                     cars[dept].map((car) =>
                                         <div>
                                             <Menu.Item>
-                                                <Checkbox checked={activeCar.indexOf(car[3]) !== -1 } className={`car-cb group-${index}`} label={car[1]} value={car[3]} onChange={this.carCB}/>
-                                                <span style={{float: 'right', fontSize: 'x-small', padding: '5px'}}>{`${
-                                                        currentLocation[car[3]] ? `${currentLocation[car[3]].Speed} KPH`: 'N/A'
-                                                    }`}
+                                                <Checkbox checked={activeCar.indexOf(car[3]) !== -1 } className={`car-cb group-${index}`} value={car[3]} onChange={this.carCB}/>
+                                                <span style={{fontSize: 'x-small', padding: '5px', position:'absolute'}}>
+                                                    {car[1]}
                                                 </span>
-                                                
+                                                <Transition animation='pulse' duration={'500'} visible mountOnShow transitionOnMount>
+                                                    <span style={{float: 'right', fontSize: 'x-small', padding: '5px'}}>{`${
+                                                            currentLocation[car[3]] ? `${currentLocation[car[3]].Speed} KPH`: 'N/A'
+                                                        }`}
+                                                    </span>
+                                                </Transition>
                                             </Menu.Item>
                                             <Divider className='divider-m-0'/>
                                         </div>
