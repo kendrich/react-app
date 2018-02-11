@@ -1,8 +1,7 @@
 
 import React from 'react'
-import $ from 'jquery'
-import {Menu, Transition, Checkbox, Button, Icon, Segment, Modal, Header, Divider, Dropdown} from 'semantic-ui-react';
-import PropTypes from 'prop-types';
+import { Menu, Transition, Checkbox, Grid, Segment, Modal, Header } from 'semantic-ui-react';
+// import PropTypes from 'prop-types';
 
 import Style from 'react-style-tag';
 
@@ -15,83 +14,128 @@ class MapForm extends React.Component {
         leftMenuVisible: true,
         errors:{},
         activeCar: [],
-        currentLocation: []
+        currentLocation: [],
+        activeItem: {},
+        map: '',
+        mapMarker: [],
     }
     
     
 
     componentDidMount() {
-        const activeCar =[];
+        const activeCar = [];
+        const mapMarker = [];
+        const map = new window.google.maps.Map(document.getElementById('map'), {
+            center: new window.google.maps.LatLng(14.157895, 121.139377),
+            zoom: 13,
+            mapTypeId: 'roadmap',
+            streetViewControl: false
+        })
+
+        const panorama = new window.google.maps.StreetViewPanorama(
+            document.getElementById('map-street-view'), {
+                pov: {
+                    heading: 34,
+                    pitch: 0
+                },
+                motionTracking: false,
+                linksControl: false,
+                panControl: false,
+                enableCloseButton: false,
+                streetViewControl: false,
+                fullscreenControl: false,
+                disableDefaultUI: true,
+            }
+        );
+
         api.admin.cars().then((response)=> {
             this.setState({cars: response})
             Object.keys(response).map(key=> {
                 response[key].map(car=> {
+
                     activeCar.push(car[3]);
+
+                    // create marker element each car
+                    mapMarker.push({
+                        car: car[3],
+                        marker: new window.google.maps.Marker({
+                            map,
+                            animation       : window.google.maps.Animation.DROP,
+                            preserveViewport: true,
+                            title           : car[1],
+                            visible         : true
+                        })
+                    });
+
+                    return true;
                 })
+                return true;
             })
             this.setState({activeCar})
         }).catch(error=>{
             this.setState({errors: error.response})
         })
 
-        const map = new window.google.maps.Map(document.getElementById('map'), {
-            center: {
-                lat: -33.8688,
-                lng: 151.2195
-            },
-            zoom: 13,
-            mapTypeId: 'roadmap',
-        });
-
-
-        const panorama = new window.google.maps.StreetViewPanorama(
-            document.getElementById('map-street-view'), {
-                position: {
-                    lat: -33.8688,
-                    lng: 151.2195
-                },
-                pov: {
-                    heading: 34,
-                    pitch: 10
-                }
-            });
-        map.setStreetView(panorama);
+        
 
         api.gps.current().then(res =>{
-            this.setState({...this.state, currentLocation: res})
-            console.log(this.state.currentLocation)
+            Object.keys(res).map((k) => 
+                Object.keys(mapMarker).map((i) =>
+                    {
+                        if(mapMarker[i].car === k){
+                            mapMarker[i].marker.setPosition(new window.google.maps.LatLng(res[k].lat, res[k].lon))
+                        }
+
+                        return true;
+                    }
+                )
+            )
+
+            this.setState({...this.state, currentLocation: res, mapMarker, map, panorama})
         });
 
         setInterval(() => {
             api.gps.current().then(res =>{
-                this.setState({...this.state, currentLocation: res})
-                console.log(this.state.currentLocation)
+                Object.keys(res).map(k => 
+                    Object.keys(mapMarker).map(i =>{
+                        if(mapMarker[i].car === k){
+                            mapMarker[i].marker.setPosition(new window.google.maps.LatLng(res[k].lat, res[k].lon))
+                        }
+                        return true;
+                    })
+                )
+                this.setState({...this.state, currentLocation: res, mapMarker, map})
             });
         }, 60000); // milliseconds
-
     }
 
     componentDidUpdate(){
-        console.log('didUpdate')
+        
     }
-    
 
     toggleLeftMenu= () => this.setState({ leftMenuVisible: !this.state.leftMenuVisible })
 
     deptGroup = (event, data) => {
         const activeCar = this.state.activeCar;
         document.querySelectorAll(`.group-${data.value} input`).forEach(elem => {
-            elem.checked=data.checked;
-            if(elem.checked){
+            const carSelect=data.checked;
+            if(carSelect){
                 if(activeCar.indexOf(elem.value) === -1){
                     activeCar.push(elem.value);
+
+                    Object.keys(this.state.mapMarker).map(i =>{
+                        if(this.state.mapMarker[i].car === elem.value) this.state.mapMarker[i].marker.setVisible(true); return true
+                    })
                 }
             }else if(activeCar.indexOf(elem.value) > -1){
                 activeCar.splice(activeCar.indexOf(elem.value), 1);
+
+                Object.keys(this.state.mapMarker).map(i =>{
+                    if(this.state.mapMarker[i].car === elem.value) this.state.mapMarker[i].marker.setVisible(false); return true
+                })
             }
         })
 
-        console.log(activeCar)
         this.setState({...this.state, activeCar});
         
     }
@@ -105,12 +149,29 @@ class MapForm extends React.Component {
         }else{
             activeCar.splice(activeCar.indexOf(data.value), 1)
         }
-        console.log(activeCar)
         this.setState({...this.state, activeCar});
     }
 
+    handleItemClick = (e, { name, department, number }) => {
+        const {panorama, map, currentLocation} = this.state;
+        this.setState({ activeItem: {
+            name,
+            department,
+            number
+        }})
+        
+        if(currentLocation[number] !== undefined){
+            panorama.setPosition(
+                new window.google.maps.LatLng(currentLocation[number].lat, currentLocation[number].lon)
+            )
+            panorama.setVisible(true);
+    
+            map.setStreetView(panorama);
+        }
+    }
+
     render() {
-        const {cars, leftMenuVisible, errors, activeCar, currentLocation} = this.state
+        const {cars, leftMenuVisible, errors, activeCar, currentLocation, activeItem} = this.state
         return (
             <div>
                 <Style>{`
@@ -125,17 +186,23 @@ class MapForm extends React.Component {
                         font-size:1em !important;
                     }
                     .dept-header{
-                        background-color: rgba(34,36,38,.1) !important;;
+                        background-color: rgba(34,36,38,.1) !important;
                     }
                     .car-details{
                         position: fixed !important;
                         bottom  : 0px !important;
-                        left    : 0px !important;
+                        right    : 0px !important;
                         height  : 23vh !important;
                         width   : 50vw;
                     }
                     .divider-k-0{
                         margin: 0px !important;
+                    }
+                    .left-menu-k {
+                        height    : 95vh !important;
+                        top       : 42px !important;
+                        left      : 1px !important;
+                        overflow-y: auto;
                     }
                 `}</Style>
                 <Menu className="home-menu">
@@ -154,33 +221,38 @@ class MapForm extends React.Component {
                                 </Menu.Item>
                                 {
                                     cars[dept].map((car) =>
-                                        <div>
-                                            <Menu.Item>
-                                                <Checkbox checked={activeCar.indexOf(car[3]) !== -1 } className={`car-cb group-${index}`} value={car[3]} onChange={this.carCB}/>
-                                                <span style={{fontSize: 'x-small', padding: '5px', position:'absolute'}}>
-                                                    {car[1]}
+                                        <Menu.Item department={dept} number={car[3]} name={car[1]} onClick={this.handleItemClick} active={activeItem.name === car[1]} style={{borderTop:'1px solid rgba(34,36,38,.15)'}}>
+                                            <Checkbox checked={activeCar.indexOf(car[3]) !== -1 } className={`car-cb group-${index}`} value={car[3]} onChange={this.carCB}/>
+                                            <span style={{fontSize: 'x-small', padding: '5px', position:'absolute'}}>
+                                                {car[1]}
+                                            </span>
+                                            <Transition animation='pulse' duration={'500'} visible mountOnShow transitionOnMount>
+                                                <span style={{float: 'right', fontSize: 'x-small', padding: '5px'}}>
+                                                    {`${
+                                                        currentLocation[car[3]] ? `${currentLocation[car[3]].Speed} KPH`: 'N/A'
+                                                    }`}
                                                 </span>
-                                                <Transition animation='pulse' duration={'500'} visible mountOnShow transitionOnMount>
-                                                    <span style={{float: 'right', fontSize: 'x-small', padding: '5px'}}>{`${
-                                                            currentLocation[car[3]] ? `${currentLocation[car[3]].Speed} KPH`: 'N/A'
-                                                        }`}
-                                                    </span>
-                                                </Transition>
-                                            </Menu.Item>
-                                            <Divider className='divider-m-0'/>
-                                        </div>
+                                            </Transition>
+                                        </Menu.Item>
                                     )
-
                                 }
                             </Menu.Menu>
                         )
                     }
                     </Menu>
                 </Transition>
-                <Segment.Group horizontal className="car-details">
-                    <Segment>First</Segment>
+                <Segment.Group compact horizontal className="car-details" style={{display: `${activeItem.name ? '' : 'none' }` }}>
+                    <Segment style={{width:'80px'}}>
+                        <Grid>
+                            <Grid.Row>
+                                <Grid.Column>
+                                    {`Car: ${activeItem ? activeItem.name : ''}`}
+                                </Grid.Column>
+                            </Grid.Row>
+                        </Grid>
+                    </Segment>
                     <Segment>
-                        <div id="map-street-view" style={{height:'100%'}}/>
+                        <div id="map-street-view" style={{height:'100%', margin: '0px !important'}}/>
                     </Segment>
                 </Segment.Group>
 
